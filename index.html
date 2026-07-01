@@ -1,0 +1,1145 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bone Trail | AI-Assisted Roguelike Engineering Case Study</title>
+  <meta
+    name="description"
+    content="Java/libGDX 로그라이크 프로토타입과 AI-assisted game development pipeline을 함께 구축한 공개 포트폴리오 케이스 스터디."
+  />
+  <meta property="og:title" content="Bone Trail" />
+  <meta
+    property="og:description"
+    content="Deterministic roguelike engineering, headless validation, source-backed UI modernization, and evidence-gated AI collaboration."
+  />
+  <meta property="og:type" content="website" />
+  <style>
+    :root {
+      --ink: #171a1c;
+      --ink-soft: #30373d;
+      --muted: #687076;
+      --paper: #f8f5ec;
+      --paper-strong: #fffaf0;
+      --line: rgba(23, 26, 28, 0.16);
+      --dark: #101517;
+      --dark-2: #1b2426;
+      --green: #7bbf5b;
+      --lime: #d4f45f;
+      --amber: #d99b38;
+      --blue: #5d8bd9;
+      --rust: #b45d42;
+      --radius: 8px;
+      --shadow: 0 26px 70px rgba(16, 21, 23, 0.22);
+      color-scheme: light;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background:
+        linear-gradient(rgba(23, 26, 28, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(23, 26, 28, 0.035) 1px, transparent 1px),
+        var(--paper);
+      background-size: 72px 72px, 72px 72px, auto;
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    .progress {
+      position: fixed;
+      z-index: 100;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: rgba(23, 26, 28, 0.1);
+    }
+
+    .progress span {
+      display: block;
+      width: 0;
+      height: 100%;
+      background: linear-gradient(90deg, var(--green), var(--amber), var(--blue));
+      transition: width 0.08s linear;
+    }
+
+    .nav {
+      position: sticky;
+      z-index: 50;
+      top: 0;
+      border-bottom: 1px solid var(--line);
+      background: rgba(248, 245, 236, 0.92);
+      backdrop-filter: blur(14px);
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      width: min(1180px, calc(100% - 36px));
+      margin: 0 auto;
+      padding: 14px 0;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 900;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
+
+    .brand-mark {
+      position: relative;
+      width: 19px;
+      height: 19px;
+      border: 2px solid var(--ink);
+      background:
+        linear-gradient(90deg, transparent 45%, var(--ink) 45%, var(--ink) 55%, transparent 55%),
+        linear-gradient(transparent 45%, var(--ink) 45%, var(--ink) 55%, transparent 55%),
+        var(--lime);
+      box-shadow: 4px 4px 0 var(--green);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+
+    .nav-links a {
+      border-radius: 999px;
+      padding: 8px 11px;
+      color: var(--ink-soft);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .nav-links a:hover,
+    .nav-links a.active {
+      background: var(--ink);
+      color: var(--paper-strong);
+    }
+
+    .hero {
+      position: relative;
+      min-height: 82vh;
+      color: var(--paper-strong);
+      overflow: hidden;
+      background:
+        linear-gradient(90deg, rgba(16, 21, 23, 0.95), rgba(16, 21, 23, 0.72) 45%, rgba(16, 21, 23, 0.42)),
+        linear-gradient(0deg, rgba(16, 21, 23, 0.78), rgba(16, 21, 23, 0.08)),
+        url("portfolio-assets/runtime-smoke.png") center / cover no-repeat;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      height: 120px;
+      background: linear-gradient(0deg, var(--paper), transparent);
+      pointer-events: none;
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      width: min(1180px, calc(100% - 36px));
+      margin: 0 auto;
+      padding: 112px 0 86px;
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--lime);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 40px;
+      height: 1px;
+      background: currentColor;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      max-width: 930px;
+      margin-top: 18px;
+      font-size: clamp(56px, 10vw, 132px);
+      line-height: 0.9;
+      letter-spacing: 0;
+    }
+
+    .hero-copy {
+      max-width: 720px;
+      margin-top: 28px;
+      color: rgba(255, 250, 240, 0.9);
+      font-size: clamp(18px, 2vw, 25px);
+      font-weight: 750;
+      line-height: 1.55;
+      word-break: keep-all;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 34px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      border: 1px solid rgba(255, 250, 240, 0.38);
+      border-radius: var(--radius);
+      padding: 11px 16px;
+      font-weight: 900;
+    }
+
+    .button.primary {
+      border-color: var(--lime);
+      background: var(--lime);
+      color: var(--ink);
+    }
+
+    .button.secondary {
+      background: rgba(255, 250, 240, 0.08);
+      color: var(--paper-strong);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      margin-top: 52px;
+      border: 1px solid rgba(255, 250, 240, 0.28);
+      background: rgba(16, 21, 23, 0.74);
+      backdrop-filter: blur(12px);
+    }
+
+    .hero-stat {
+      min-height: 116px;
+      border-right: 1px solid rgba(255, 250, 240, 0.22);
+      padding: 22px 20px;
+    }
+
+    .hero-stat:last-child {
+      border-right: 0;
+    }
+
+    .hero-stat strong {
+      display: block;
+      font-size: clamp(24px, 3vw, 40px);
+      line-height: 1;
+    }
+
+    .hero-stat span {
+      display: block;
+      margin-top: 11px;
+      color: rgba(255, 250, 240, 0.74);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    section {
+      padding: 94px 0;
+    }
+
+    .wrap {
+      width: min(1180px, calc(100% - 36px));
+      margin: 0 auto;
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.72fr);
+      gap: 28px;
+      align-items: end;
+      margin-bottom: 30px;
+    }
+
+    .kicker {
+      color: var(--green);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    h2 {
+      margin-top: 10px;
+      font-size: clamp(36px, 6vw, 72px);
+      line-height: 0.98;
+      letter-spacing: 0;
+    }
+
+    .section-head > p,
+    .lead {
+      color: var(--ink-soft);
+      font-size: 17px;
+      font-weight: 650;
+      line-height: 1.7;
+      word-break: keep-all;
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .grid.two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid.three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 250, 240, 0.82);
+      padding: 24px;
+    }
+
+    .card.dark {
+      border-color: rgba(255, 250, 240, 0.16);
+      background: var(--dark);
+      color: var(--paper-strong);
+    }
+
+    .card h3 {
+      margin-top: 12px;
+      font-size: 24px;
+      line-height: 1.16;
+      letter-spacing: 0;
+    }
+
+    .card p {
+      margin-top: 12px;
+      color: var(--ink-soft);
+      font-size: 15px;
+      line-height: 1.68;
+      word-break: keep-all;
+    }
+
+    .card.dark p {
+      color: rgba(255, 250, 240, 0.76);
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      background: rgba(123, 191, 91, 0.18);
+      color: #326025;
+      padding: 6px 9px;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .tag.blue {
+      background: rgba(93, 139, 217, 0.16);
+      color: #315ea8;
+    }
+
+    .tag.amber {
+      background: rgba(217, 155, 56, 0.18);
+      color: #865512;
+    }
+
+    .snapshot {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .summary-list {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .summary-list li {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 16px;
+      border-top: 1px solid var(--line);
+      padding: 15px 0;
+      color: var(--ink-soft);
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    .summary-list li:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .summary-list strong {
+      color: var(--ink);
+      font-size: 13px;
+      text-transform: uppercase;
+    }
+
+    .media-frame {
+      overflow: hidden;
+      border: 1px solid rgba(255, 250, 240, 0.16);
+      border-radius: var(--radius);
+      background: var(--dark);
+      box-shadow: var(--shadow);
+    }
+
+    .media-frame img {
+      width: 100%;
+      height: 100%;
+      min-height: 320px;
+      object-fit: cover;
+      opacity: 0.96;
+    }
+
+    .media-frame figcaption {
+      border-top: 1px solid rgba(255, 250, 240, 0.14);
+      padding: 12px 14px;
+      color: rgba(255, 250, 240, 0.72);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .feature-band {
+      background: var(--dark);
+      color: var(--paper-strong);
+    }
+
+    .feature-band .section-head > p,
+    .feature-band .lead {
+      color: rgba(255, 250, 240, 0.75);
+    }
+
+    .feature-band .kicker {
+      color: var(--lime);
+    }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      border: 1px solid rgba(255, 250, 240, 0.18);
+    }
+
+    .timeline-step {
+      min-height: 250px;
+      border-right: 1px solid rgba(255, 250, 240, 0.18);
+      padding: 24px;
+    }
+
+    .timeline-step:last-child {
+      border-right: 0;
+    }
+
+    .timeline-step span {
+      color: var(--lime);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .timeline-step strong {
+      display: block;
+      margin-top: 16px;
+      font-size: 24px;
+      line-height: 1.12;
+    }
+
+    .timeline-step p {
+      margin-top: 14px;
+      color: rgba(255, 250, 240, 0.72);
+      font-size: 14px;
+      line-height: 1.62;
+      word-break: keep-all;
+    }
+
+    .proof-list {
+      display: grid;
+      gap: 12px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .proof-list li {
+      display: grid;
+      gap: 8px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 250, 240, 0.72);
+      padding: 16px;
+    }
+
+    .proof-list code {
+      color: #284d20;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      font-weight: 850;
+      white-space: normal;
+      word-break: break-word;
+    }
+
+    .proof-list span {
+      color: var(--ink-soft);
+      font-size: 14px;
+      line-height: 1.52;
+    }
+
+    .image-strip {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 16px;
+      align-items: stretch;
+      margin-top: 24px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 16px;
+    }
+
+    .small-frame img {
+      min-height: 200px;
+    }
+
+    .direction {
+      display: grid;
+      grid-template-columns: 0.75fr 1.25fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .direction-panel {
+      position: sticky;
+      top: 86px;
+      border-radius: var(--radius);
+      background: var(--dark);
+      color: var(--paper-strong);
+      padding: 24px;
+    }
+
+    .direction-panel h3 {
+      font-size: 30px;
+      line-height: 1.05;
+    }
+
+    .direction-panel p {
+      margin-top: 14px;
+      color: rgba(255, 250, 240, 0.76);
+      line-height: 1.65;
+      word-break: keep-all;
+    }
+
+    .roadmap {
+      display: grid;
+      gap: 12px;
+    }
+
+    .roadmap-item {
+      display: grid;
+      grid-template-columns: 74px 1fr;
+      gap: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 250, 240, 0.8);
+      padding: 18px;
+    }
+
+    .roadmap-item strong {
+      color: var(--rust);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+    }
+
+    .roadmap-item h3 {
+      font-size: 22px;
+      line-height: 1.2;
+    }
+
+    .roadmap-item p {
+      margin-top: 8px;
+      color: var(--ink-soft);
+      font-size: 14px;
+      line-height: 1.62;
+      word-break: keep-all;
+    }
+
+    .resume-box {
+      border: 1px solid rgba(23, 26, 28, 0.2);
+      border-radius: var(--radius);
+      background: var(--paper-strong);
+      padding: 24px;
+    }
+
+    .resume-box h3 {
+      font-size: 26px;
+    }
+
+    .resume-box ul {
+      display: grid;
+      gap: 12px;
+      margin: 18px 0 0;
+      padding-left: 20px;
+      color: var(--ink-soft);
+      font-size: 15px;
+      line-height: 1.65;
+      word-break: keep-all;
+    }
+
+    .note {
+      border-left: 4px solid var(--amber);
+      background: rgba(217, 155, 56, 0.12);
+      padding: 16px 18px;
+      color: var(--ink-soft);
+      font-size: 14px;
+      line-height: 1.65;
+      word-break: keep-all;
+    }
+
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 32px 0 42px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.55s ease, transform 0.55s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 920px) {
+      .nav-inner,
+      .section-head,
+      .snapshot,
+      .direction,
+      .image-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .nav-inner {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .hero-grid,
+      .grid.three,
+      .grid.two,
+      .timeline {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .timeline-step:nth-child(2) {
+        border-right: 0;
+      }
+
+      .timeline-step:nth-child(-n + 2) {
+        border-bottom: 1px solid rgba(255, 250, 240, 0.18);
+      }
+
+      .direction-panel {
+        position: static;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .hero-inner {
+        padding-top: 86px;
+      }
+
+      h1 {
+        font-size: clamp(48px, 18vw, 76px);
+      }
+
+      section {
+        padding: 70px 0;
+      }
+
+      .hero-grid,
+      .grid.three,
+      .grid.two,
+      .timeline,
+      .summary-list li,
+      .roadmap-item {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-stat {
+        min-height: auto;
+        border-right: 0;
+        border-bottom: 1px solid rgba(255, 250, 240, 0.22);
+      }
+
+      .hero-stat:last-child {
+        border-bottom: 0;
+      }
+
+      .timeline-step {
+        min-height: auto;
+        border-right: 0;
+        border-bottom: 1px solid rgba(255, 250, 240, 0.18);
+      }
+
+      .timeline-step:last-child {
+        border-bottom: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="progress" aria-hidden="true"><span></span></div>
+
+  <nav class="nav" aria-label="Portfolio sections">
+    <div class="nav-inner">
+      <a class="brand" href="#top" aria-label="Bone Trail">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Bone Trail</span>
+      </a>
+      <div class="nav-links">
+        <a href="#overview">Overview</a>
+        <a href="#build">Build</a>
+        <a href="#pipeline">Pipeline</a>
+        <a href="#proof">Proof</a>
+        <a href="#direction">Direction</a>
+        <a href="#resume">Resume</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero" id="top">
+    <div class="hero-inner">
+      <div class="eyebrow">AI-assisted game engineering case study</div>
+      <h1>Bone Trail</h1>
+      <p class="hero-copy">
+        Java/libGDX 로그라이크 프로토타입을 만들며, AI 협업이 빠르게 흩어지지 않도록
+        테스트, 진행 로그, handoff, evidence gate를 함께 설계한 개발 사례입니다.
+      </p>
+      <div class="hero-actions">
+        <a class="button primary" href="#build">구현 내용 보기</a>
+        <a class="button secondary" href="#proof">검증 근거 보기</a>
+      </div>
+      <div class="hero-grid" aria-label="Case summary">
+        <div class="hero-stat"><strong>Java</strong><span>libGDX 기반 Android-first roguelike prototype</span></div>
+        <div class="hero-stat"><strong>Headless</strong><span>렌더링보다 먼저 검증하는 deterministic gameplay tests</span></div>
+        <div class="hero-stat"><strong>AI Ops</strong><span>Codex/Claude 협업을 위한 dispatch, status, handoff loop</span></div>
+        <div class="hero-stat"><strong>R2</strong><span>source-backed UI runtime modernization in progress</span></div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="overview">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <div>
+            <p class="kicker">01 / Public Overview</p>
+            <h2>게임 구현과 개발 운영 체계를 함께 증명한 케이스.</h2>
+          </div>
+          <p>
+            이 프로젝트는 완성된 출시작이 아니라, 규칙 기반 로그라이크를 장기적으로 만들기 위한
+            엔지니어링 프로토타입입니다. 포트폴리오의 핵심은 “AI로 만들었다”가 아니라
+            “AI 협업을 검증 가능한 개발 프로세스로 묶었다”는 점입니다.
+          </p>
+        </div>
+
+        <div class="snapshot">
+          <article class="card reveal">
+            <span class="tag">Case Position</span>
+            <h3>Prototype, not shipped game</h3>
+            <p>
+              현재 상태는 Java/libGDX 로그라이크의 핵심 규칙, UI 현대화 실험, 검증 파이프라인을 갖춘
+              in-progress prototype입니다. 출시, 상용화, Android 배포 완료로 표현하지 않습니다.
+            </p>
+          </article>
+          <article class="card reveal">
+            <ul class="summary-list">
+              <li><strong>Engine</strong><span>Java + libGDX. Android-first, desktop review path.</span></li>
+              <li><strong>Game Loop</strong><span>Tile movement, turn combat, item use, class actives, floor progression, boss-gate spine.</span></li>
+              <li><strong>Validation</strong><span>Headless model tests, text smokes, route checks, combat simulation harness, CodeGraph records.</span></li>
+              <li><strong>Collaboration</strong><span>AI-assisted development loop with repo status, handoff, progress, and Sub-brain memory routing.</span></li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="build">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <div>
+            <p class="kicker">02 / What Has Been Built</p>
+            <h2>지금까지 구현된 핵심 축.</h2>
+          </div>
+          <p>
+            외부용 설명은 기능 나열보다 “왜 이렇게 만들었는가”가 중요합니다. 이 프로젝트는
+            렌더링보다 규칙 검증을 먼저 세우고, 그 위에 UI와 운영 체계를 얹는 방식으로 진행됐습니다.
+          </p>
+        </div>
+
+        <div class="grid three">
+          <article class="card reveal">
+            <span class="tag">Game Runtime</span>
+            <h3>Deterministic roguelike core</h3>
+            <p>
+              이동, 전투, 회복 아이템, bone fragment pickup, run state, save/load contract를
+              headless tests로 검증할 수 있게 분리했습니다.
+            </p>
+          </article>
+          <article class="card reveal">
+            <span class="tag blue">Progression</span>
+            <h3>Class and encounter spine</h3>
+            <p>
+              class selection, active skill/status depth, authored floor, boss gate, run clear feedback 같은
+              전체 플레이 흐름의 뼈대를 만들었습니다.
+            </p>
+          </article>
+          <article class="card reveal">
+            <span class="tag amber">Evaluation</span>
+            <h3>Simulation and route harnesses</h3>
+            <p>
+              combat simulation harness와 route-focused tests로 balance proxy, 반복 행동, clearability를
+              코드 레벨에서 추적합니다.
+            </p>
+          </article>
+          <article class="card reveal">
+            <span class="tag">UI Runtime</span>
+            <h3>Source-backed UI modernization</h3>
+            <p>
+              Shattered Pixel Dungeon의 GPLv3 source route를 기준으로, 이름만 빌리는 UI가 아니라
+              window lifecycle, modal dispatch, measured text 같은 동작 단위로 차이를 분해했습니다.
+            </p>
+          </article>
+          <article class="card reveal">
+            <span class="tag blue">Dev OS</span>
+            <h3>Evidence-gated AI workflow</h3>
+            <p>
+              Codex 세션이 만든 변경을 `ops/status.json`, `ops/handoff.md`, `Progress.md`,
+              Sub-brain 기록으로 연결해 다음 세션이 같은 기준에서 이어갈 수 있게 했습니다.
+            </p>
+          </article>
+          <article class="card reveal">
+            <span class="tag amber">License</span>
+            <h3>Visible provenance boundary</h3>
+            <p>
+              reference-source study와 GPLv3-compatible framing을 명확히 분리해, 원본 자산이나 코드를
+              project-original로 과장하지 않도록 관리합니다.
+            </p>
+          </article>
+        </div>
+
+        <div class="image-strip">
+          <figure class="media-frame reveal">
+            <img src="portfolio-assets/runtime-smoke.png" alt="Bone Trail desktop runtime screenshot" />
+            <figcaption>Desktop runtime review screenshot. Visual proof is used as supporting material, not as final UI acceptance.</figcaption>
+          </figure>
+          <div class="stack">
+            <figure class="media-frame small-frame reveal">
+              <img src="portfolio-assets/class-guard.png" alt="Guard class active screenshot" />
+              <figcaption>Class-active review path for the gameplay spine.</figcaption>
+            </figure>
+            <figure class="media-frame small-frame reveal">
+              <img src="portfolio-assets/class-blade.png" alt="Blade class active screenshot" />
+              <figcaption>Class variation and active skill review screenshot.</figcaption>
+            </figure>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="feature-band" id="pipeline">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <div>
+            <p class="kicker">03 / AI-Native Development Pipeline</p>
+            <h2>AI 협업을 운영 가능한 개발 루프로 묶기.</h2>
+          </div>
+          <p>
+            이 프로젝트에서 AI는 “자동으로 게임을 완성하는 도구”가 아닙니다. 사람의 방향 설정 아래,
+            반복 작업과 검증 기록을 빠르게 축적하는 개발 파트너로 사용했습니다.
+          </p>
+        </div>
+
+        <div class="timeline">
+          <article class="timeline-step reveal">
+            <span>01 Dispatch</span>
+            <strong>Role-specific work orders</strong>
+            <p>
+              Game Dev, Portfolio, Release/Ops 같은 역할별 directive로 세션 범위와 금지사항을 먼저 고정합니다.
+            </p>
+          </article>
+          <article class="timeline-step reveal">
+            <span>02 Implement</span>
+            <strong>Small vertical units</strong>
+            <p>
+              큰 비전을 한 번에 구현하지 않고, 테스트 가능한 단위로 gameplay, UI, tooling을 나눠 진행합니다.
+            </p>
+          </article>
+          <article class="timeline-step reveal">
+            <span>03 Verify</span>
+            <strong>Tests before claims</strong>
+            <p>
+              Gradle tests, text smokes, route checks, CodeGraph records, artifact hashes가 claim의 근거가 됩니다.
+            </p>
+          </article>
+          <article class="timeline-step reveal">
+            <span>04 Handoff</span>
+            <strong>State survives sessions</strong>
+            <p>
+              status, handoff, progress, Sub-brain records로 다음 AI 세션이 같은 맥락에서 이어갑니다.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="proof">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <div>
+            <p class="kicker">04 / Evidence</p>
+            <h2>포트폴리오 claim을 받쳐 주는 검증 근거.</h2>
+          </div>
+          <p>
+            공개 페이지에서는 내부 로그 전체를 노출하지 않지만, 어떤 근거 위에서 말하는지는 명확해야 합니다.
+            아래 항목은 이 프로젝트가 단순 화면 mockup이 아니라 검증 가능한 작업이었다는 증거입니다.
+          </p>
+        </div>
+
+        <div class="grid two">
+          <article class="resume-box reveal">
+            <h3>Representative validation</h3>
+            <ul class="proof-list" style="margin-top:18px">
+              <li>
+                <code>./gradlew :core:test --rerun-tasks</code>
+                <span>Core model, UI harness, combat simulation, route tests를 포함한 headless validation 기록.</span>
+              </li>
+              <li>
+                <code>./gradlew :desktop:compileJava</code>
+                <span>Desktop runtime compile path 검증.</span>
+              </li>
+              <li>
+                <code>./gradlew :desktop:run -Drogueos.smokeExit=true -Drogueos.textSmoke=true</code>
+                <span>Desktop review path reachability 확인. 단, smoke는 usability acceptance가 아니라 reachability proof입니다.</span>
+              </li>
+              <li>
+                <code>OriginUiDeltaHarnessTest</code>
+                <span>R2 UI runtime spine의 window, button, modal dispatch, close lifecycle, measured text behavior 검증.</span>
+              </li>
+            </ul>
+          </article>
+          <article class="card reveal">
+            <span class="tag">Public Claim Boundary</span>
+            <h3>정확히 말할 수 있는 수준</h3>
+            <p>
+              말할 수 있는 것: Java/libGDX 프로토타입, deterministic gameplay validation, AI-assisted development
+              operations layer, source-backed UI modernization process.
+            </p>
+            <p>
+              아직 말하지 않는 것: 출시 완료, Android 배포, store-ready product, polished UI, 원본보다 나은 UX,
+              GPL-covered combined distribution에 대한 proprietary closed-source ownership.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="direction">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <div>
+            <p class="kicker">05 / Direction</p>
+            <h2>앞으로의 방향성.</h2>
+          </div>
+          <p>
+            이 페이지는 현재까지의 구현을 포장하는 데서 끝나지 않습니다. 다음 단계는 “플레이 가능한 척”이 아니라
+            실제 조작 편의성과 UI runtime depth를 올리는 쪽으로 잡혀 있습니다.
+          </p>
+        </div>
+
+        <div class="direction">
+          <aside class="direction-panel reveal">
+            <h3>From prototype spine to playable depth</h3>
+            <p>
+              다음 목표는 UI 이름표를 늘리는 것이 아니라, 플레이어가 직접 만지는 window, bag, quickslot,
+              viewport behavior를 runtime contract로 흡수하는 것입니다.
+            </p>
+          </aside>
+          <div class="roadmap">
+            <article class="roadmap-item reveal">
+              <strong>R2b</strong>
+              <div>
+                <h3>Viewport and scene scale</h3>
+                <p>작은 창과 큰 창에서 같은 UI가 깨지지 않도록 map, HUD, text scale, scene framing을 안정화합니다.</p>
+              </div>
+            </article>
+            <article class="roadmap-item reveal">
+              <strong>R2c</strong>
+              <div>
+                <h3>Interactive bag window</h3>
+                <p>inventory/bag surface를 정적 표시가 아니라 선택, 취소, item detail, modal dispatch가 있는 UI로 이동합니다.</p>
+              </div>
+            </article>
+            <article class="roadmap-item reveal">
+              <strong>Demo</strong>
+              <div>
+                <h3>Short public walkthrough</h3>
+                <p>movement, combat, item use, class active, inventory, warp를 30-60초 영상이나 GIF로 보여줄 수 있게 정리합니다.</p>
+              </div>
+            </article>
+            <article class="roadmap-item reveal">
+              <strong>Release</strong>
+              <div>
+                <h3>Android and provenance gate</h3>
+                <p>Android artifact, branding, package identity, GPLv3 notice, credits, update/support links를 별도 release gate에서 다룹니다.</p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="resume">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <div>
+            <p class="kicker">06 / Resume Use</p>
+            <h2>이력서와 포트폴리오에서의 활용 포인트.</h2>
+          </div>
+          <p>
+            회사/직무별로 문장을 조정해야 하지만, 현재 공개 가능한 포지셔닝은 아래 범위 안에 있습니다.
+          </p>
+        </div>
+
+        <div class="grid two">
+          <article class="resume-box reveal">
+            <h3>Resume-ready framing</h3>
+            <ul>
+              <li>Java/libGDX 기반 턴제 로그라이크 프로토타입을 구현하고, gameplay rules를 렌더링과 분리해 headless tests로 검증.</li>
+              <li>Codex/Claude 세션을 dispatch, status, handoff, progress, evidence gate로 묶어 multi-session AI-assisted development loop 설계.</li>
+              <li>reference-source analysis를 implementation harness로 전환해 UI modernization 과제를 component/window/input/text behavior 단위로 분해.</li>
+              <li>combat simulation harness와 route validation을 통해 balance proxy와 반복 행동 리스크를 코드 레벨에서 추적.</li>
+            </ul>
+          </article>
+          <article class="resume-box reveal">
+            <h3>Best-fit roles</h3>
+            <ul>
+              <li>Gameplay / client engineer who can keep rules testable outside rendering.</li>
+              <li>AI-native product engineer who turns agent speed into auditable delivery.</li>
+              <li>Technical PM / game tools profile focused on workflow, validation, and handoff design.</li>
+              <li>Prototype engineer comfortable with GPL/CC0 provenance and evidence-backed public claims.</li>
+            </ul>
+          </article>
+        </div>
+
+        <p class="note reveal" style="margin-top:18px">
+          공개 표현 기준: 이 페이지는 구현된 prototype과 검증된 개발 프로세스를 설명합니다. 최종 출시작, Android 배포,
+          polished UI, 상용 release readiness는 아직 claim하지 않습니다.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      Bone Trail public portfolio page. Generated from repo evidence on 2026-07-01.
+      Project state: in-progress Java/libGDX prototype and engineering case study.
+    </div>
+  </footer>
+
+  <script>
+    const progress = document.querySelector(".progress span");
+    const navLinks = [...document.querySelectorAll(".nav-links a")];
+    const sections = navLinks
+      .map((link) => document.querySelector(link.getAttribute("href")))
+      .filter(Boolean);
+
+    const updateProgress = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const ratio = max > 0 ? window.scrollY / max : 0;
+      progress.style.width = `${Math.max(0, Math.min(1, ratio)) * 100}%`;
+    };
+
+    const revealObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("visible");
+            revealObserver.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.16 }
+    );
+
+    document.querySelectorAll(".reveal").forEach((node) => revealObserver.observe(node));
+
+    const sectionObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          navLinks.forEach((link) => {
+            link.classList.toggle("active", link.getAttribute("href") === `#${entry.target.id}`);
+          });
+        });
+      },
+      { rootMargin: "-45% 0px -50% 0px", threshold: 0 }
+    );
+
+    sections.forEach((section) => sectionObserver.observe(section));
+    window.addEventListener("scroll", updateProgress, { passive: true });
+    updateProgress();
+  </script>
+</body>
+</html>
