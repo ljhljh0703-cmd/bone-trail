@@ -132,7 +132,7 @@
       background:
         linear-gradient(90deg, rgba(17, 21, 19, 0.98), rgba(17, 21, 19, 0.82), rgba(17, 21, 19, 0.55)),
         linear-gradient(0deg, rgba(17, 21, 19, 0.9), rgba(17, 21, 19, 0.08)),
-        url("portfolio-assets/runtime-smoke.png") center / cover no-repeat;
+        url("portfolio-assets/prototype-overview.png") center / cover no-repeat;
     }
 
     .hero-inner {
@@ -256,7 +256,7 @@
     .thumb img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
     }
 
     .summary-panel {
@@ -657,18 +657,18 @@
       <div class="store-grid">
         <section class="media-panel" id="media" aria-label="Screenshot gallery">
           <div class="main-shot">
-            <img id="mainShot" src="portfolio-assets/runtime-smoke.png" alt="Bone Trail dungeon runtime screenshot" />
-            <div class="shot-caption" id="shotCaption">작은 던전, 턴제 이동, 전투와 회복 판단을 한 화면에 압축합니다.</div>
+            <img id="mainShot" src="portfolio-assets/prototype-overview.png" alt="Bone Trail prototype desktop review capture" />
+            <div class="shot-caption" id="shotCaption">프로토타입 리뷰 캡처입니다. 최종 UI나 출시 스크린샷으로 확정된 화면은 아닙니다.</div>
           </div>
           <div class="thumbs">
-            <button class="thumb active" type="button" data-shot="portfolio-assets/runtime-smoke.png" data-caption="작은 던전, 턴제 이동, 전투와 회복 판단을 한 화면에 압축합니다.">
-              <img src="portfolio-assets/runtime-smoke.png" alt="Dungeon runtime thumbnail" />
+            <button class="thumb active" type="button" data-shot="portfolio-assets/prototype-overview.png" data-caption="프로토타입 리뷰 캡처입니다. 최종 UI나 출시 스크린샷으로 확정된 화면은 아닙니다.">
+              <img src="portfolio-assets/prototype-overview.png" alt="Prototype overview thumbnail" />
             </button>
-            <button class="thumb" type="button" data-shot="portfolio-assets/class-guard.png" data-caption="Guard 계열은 버티기와 타이밍을 중심으로 실험 중인 class route입니다.">
-              <img src="portfolio-assets/class-guard.png" alt="Guard class thumbnail" />
+            <button class="thumb" type="button" data-shot="portfolio-assets/prototype-map.png" data-caption="작은 층 단위 탐색과 자원/이벤트 표식을 검증하는 map review capture입니다.">
+              <img src="portfolio-assets/prototype-map.png" alt="Prototype map thumbnail" />
             </button>
-            <button class="thumb" type="button" data-shot="portfolio-assets/class-blade.png" data-caption="Blade 계열은 빠른 처치와 위험 보상을 보여주는 class route입니다.">
-              <img src="portfolio-assets/class-blade.png" alt="Blade class thumbnail" />
+            <button class="thumb" type="button" data-shot="portfolio-assets/prototype-bag.png" data-caption="가방/아이템 표면은 review-only UI입니다. 조작 흐름을 보여주는 증거이지 최종 polish는 아닙니다.">
+              <img src="portfolio-assets/prototype-bag.png" alt="Prototype bag thumbnail" />
             </button>
           </div>
         </section>
@@ -753,7 +753,7 @@
         <article class="section-panel">
           <h3>다음에 좋아져야 할 것</h3>
           <p>
-            현재 핵심 규칙은 테스트로 검증되어 있지만, 플레이하고 싶게 만드는 UI 밀도와 조작 편의성은 아직 개발 중입니다.
+            현재 핵심 규칙은 테스트로 검증되어 있지만, 공개용 스크린샷 품질과 실제 조작 편의성은 아직 개발 중입니다.
             다음 단계는 화면을 더 예쁘게 꾸미는 것보다 실제로 만지는 창과 가방, quickslot, viewport behavior를 개선하는 것입니다.
           </p>
           <ul class="roadmap">
