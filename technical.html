@@ -1,0 +1,696 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bone Trail | Technical Case Study</title>
+  <meta
+    name="description"
+    content="Bone Trail의 Java/libGDX 구현, 검증 방식, AI-assisted development pipeline을 정리한 별도 기술 소개 페이지입니다."
+  />
+  <meta property="og:title" content="Bone Trail Technical Case Study" />
+  <meta
+    property="og:description"
+    content="A technical case study for an in-development Java/libGDX roguelike prototype."
+  />
+  <meta property="og:type" content="website" />
+  <link rel="icon" href="portfolio-assets/favicon.svg" type="image/svg+xml" />
+  <style>
+    :root {
+      --bg: #111513;
+      --panel: #1a211e;
+      --panel-2: #222b26;
+      --paper: #f3ead3;
+      --text: #f8f0df;
+      --muted: #c4baa4;
+      --line: rgba(243, 234, 211, 0.18);
+      --green: #9ad85d;
+      --green-2: #608f3c;
+      --gold: #d8a84e;
+      --rust: #b96b45;
+      --red: #d85f4b;
+      --shadow: rgba(0, 0, 0, 0.34);
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background:
+        linear-gradient(rgba(243, 234, 211, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(243, 234, 211, 0.035) 1px, transparent 1px),
+        var(--bg);
+      background-size: 64px 64px, 64px 64px, auto;
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid rgba(243, 234, 211, 0.14);
+      background: rgba(17, 21, 19, 0.92);
+      backdrop-filter: blur(14px);
+    }
+
+    .topbar-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 14px 0;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 17px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .brand-mark {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #050705;
+      background:
+        linear-gradient(90deg, transparent 43%, #050705 43%, #050705 57%, transparent 57%),
+        linear-gradient(transparent 43%, #050705 43%, #050705 57%, transparent 57%),
+        var(--green);
+      box-shadow: 4px 4px 0 var(--green-2);
+    }
+
+    .top-links {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .top-links a {
+      min-height: 34px;
+      border-radius: 8px;
+      padding: 8px 11px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .top-links a:hover,
+    .top-links a.primary-link {
+      background: var(--green);
+      color: #10140f;
+    }
+
+    .hero {
+      border-bottom: 1px solid rgba(243, 234, 211, 0.16);
+      background:
+        linear-gradient(90deg, rgba(17, 21, 19, 0.98), rgba(17, 21, 19, 0.72)),
+        url("portfolio-assets/runtime-smoke.png") center / cover no-repeat;
+    }
+
+    .hero-inner {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 78px 0 58px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      border: 1px solid rgba(154, 216, 93, 0.5);
+      border-radius: 8px;
+      background: rgba(154, 216, 93, 0.13);
+      color: var(--green);
+      padding: 5px 9px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      max-width: 900px;
+      margin-top: 14px;
+      font-size: 58px;
+      line-height: 0.98;
+      letter-spacing: 0;
+    }
+
+    .lede {
+      max-width: 780px;
+      margin-top: 18px;
+      color: var(--paper);
+      font-size: 21px;
+      font-weight: 820;
+      line-height: 1.5;
+      word-break: keep-all;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      border: 1px solid rgba(243, 234, 211, 0.22);
+      border-radius: 8px;
+      padding: 11px 14px;
+      font-size: 14px;
+      font-weight: 900;
+      text-align: center;
+    }
+
+    .button.primary {
+      border-color: var(--green);
+      background: linear-gradient(180deg, #b5ef6d, #7fbd4b);
+      color: #0c120b;
+    }
+
+    .button.secondary {
+      background: rgba(243, 234, 211, 0.08);
+      color: var(--paper);
+    }
+
+    main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 36px 0 72px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .panel,
+    .metric,
+    .evidence-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(26, 33, 30, 0.92);
+      box-shadow: 0 24px 70px var(--shadow);
+    }
+
+    .panel {
+      padding: 22px;
+    }
+
+    .panel h2,
+    .section-title h2 {
+      font-size: 30px;
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    .panel p {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.72;
+      word-break: keep-all;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .metric {
+      min-height: 136px;
+      padding: 18px;
+    }
+
+    .metric b {
+      display: block;
+      color: var(--green);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .metric span {
+      display: block;
+      margin-top: 10px;
+      color: var(--paper);
+      font-size: 20px;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
+    .metric small {
+      display: block;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .section {
+      margin-top: 36px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid rgba(243, 234, 211, 0.16);
+      padding-bottom: 12px;
+    }
+
+    .section-title p {
+      max-width: 500px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+      text-align: right;
+      word-break: keep-all;
+    }
+
+    .evidence-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .evidence-card {
+      overflow: hidden;
+      min-height: 100%;
+    }
+
+    .evidence-card img {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      border-bottom: 1px solid var(--line);
+      background: #080a09;
+    }
+
+    .evidence-body {
+      padding: 18px;
+    }
+
+    .evidence-body small {
+      display: inline-flex;
+      margin-bottom: 10px;
+      color: var(--green);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .evidence-body h3 {
+      font-size: 20px;
+      line-height: 1.2;
+    }
+
+    .evidence-body p {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.62;
+      word-break: keep-all;
+    }
+
+    .table-panel {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid rgba(243, 234, 211, 0.12);
+      padding: 14px 16px;
+      text-align: left;
+      vertical-align: top;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    th {
+      color: var(--paper);
+      background: rgba(243, 234, 211, 0.07);
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    td {
+      color: var(--muted);
+    }
+
+    td strong {
+      color: var(--paper);
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .callout {
+      margin-top: 16px;
+      border-left: 4px solid var(--gold);
+      border-radius: 8px;
+      background: rgba(216, 168, 78, 0.11);
+      padding: 14px 16px;
+      color: var(--paper);
+      font-size: 14px;
+      line-height: 1.6;
+      word-break: keep-all;
+    }
+
+    .risk-list {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+
+    .risk-list li {
+      border: 1px solid rgba(216, 95, 75, 0.32);
+      border-radius: 8px;
+      background: rgba(216, 95, 75, 0.08);
+      padding: 16px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.58;
+      word-break: keep-all;
+    }
+
+    .risk-list b {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--paper);
+      font-size: 16px;
+    }
+
+    footer {
+      border-top: 1px solid rgba(243, 234, 211, 0.14);
+      color: var(--muted);
+      padding: 28px 0 40px;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    @media (max-width: 960px) {
+      .summary-grid,
+      .evidence-grid,
+      .risk-list {
+        grid-template-columns: 1fr;
+      }
+
+      .section-title {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .section-title p {
+        text-align: left;
+      }
+
+      h1 {
+        font-size: 48px;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .topbar-inner {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .hero-inner {
+        padding-top: 54px;
+      }
+
+      h1 {
+        font-size: 39px;
+      }
+
+      .lede {
+        font-size: 18px;
+      }
+
+      .metric-grid {
+        grid-template-columns: 1fr;
+      }
+
+      th,
+      td {
+        display: block;
+        width: 100%;
+      }
+
+      th {
+        border-bottom: 0;
+        padding-bottom: 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="topbar" aria-label="Page navigation">
+    <div class="topbar-inner">
+      <a class="brand" href="./index.html" aria-label="Bone Trail">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Bone Trail</span>
+      </a>
+      <div class="top-links">
+        <a href="./index.html">게임 소개</a>
+        <a href="#stack">구현 구조</a>
+        <a href="#validation">검증</a>
+        <a class="primary-link" href="#pipeline">AI 협업</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <span class="eyebrow">Technical Case Study</span>
+      <h1>Bone Trail Technical Case Study</h1>
+      <p class="lede">
+        마케팅 페이지와 분리한 기술 소개입니다. 현재 구현은 Java/libGDX 기반의 턴제 던전
+        프로토타입이며, 핵심 규칙을 렌더링과 분리해 테스트하고 AI-assisted 작업을 증거 기록으로 묶습니다.
+      </p>
+      <div class="hero-actions">
+        <a class="button primary" href="./index.html">게임 페이지로 이동</a>
+        <a class="button secondary" href="https://github.com/ljhljh0703-cmd/bone-trail">공개 GitHub 보기</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="summary-grid" aria-label="Technical overview">
+      <article class="panel">
+        <h2>기술 소개의 역할</h2>
+        <p>
+          이 페이지는 게임을 파는 문장이 아니라, 구현 방식과 검증 방식을 설명하는 포트폴리오 표면입니다.
+          공개 플레이 빌드, Android release, store readiness, user acceptance는 아직 주장하지 않습니다.
+        </p>
+        <p>
+          강점은 완성된 화면보다 개발 방식에 있습니다. deterministic model test, UI runtime spine proof,
+          evidence ledger, handoff record가 각각 구현과 협업의 과장을 막는 장치로 쓰입니다.
+        </p>
+        <div class="callout">
+          현재 공개 HTML은 `Bone Trail`이라는 포트폴리오 이름을 쓰지만, 내부 소스 repo/package 이름은 별도
+          거버넌스 변경 전까지 유지됩니다.
+        </div>
+      </article>
+      <div class="metric-grid">
+        <div class="metric">
+          <b>Engine</b>
+          <span>Java / libGDX</span>
+          <small>Android-first target, desktop review path.</small>
+        </div>
+        <div class="metric">
+          <b>Runtime split</b>
+          <span>Model before render</span>
+          <small>Gameplay rules remain testable without drawing.</small>
+        </div>
+        <div class="metric">
+          <b>Validation</b>
+          <span>Headless proof</span>
+          <small>Focused Gradle tests and render smoke checks.</small>
+        </div>
+        <div class="metric">
+          <b>Status</b>
+          <span>In progress</span>
+          <small>Prototype evidence, not shipped-game evidence.</small>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="stack">
+      <div class="section-title">
+        <h2>구현 구조</h2>
+        <p>현재 포트폴리오에 안전하게 말할 수 있는 기술 축만 남겼습니다.</p>
+      </div>
+      <div class="evidence-grid">
+        <article class="evidence-card">
+          <img src="portfolio-assets/runtime-smoke.png" alt="Desktop runtime screenshot" />
+          <div class="evidence-body">
+            <small>01</small>
+            <h3>Playable rule spine</h3>
+            <p>이동, 전투, 아이템, class active, warp 흐름을 작은 던전 단위에서 검증하는 vertical-slice prototype입니다.</p>
+          </div>
+        </article>
+        <article class="evidence-card">
+          <img src="portfolio-assets/class-guard.png" alt="Class route screenshot" />
+          <div class="evidence-body">
+            <small>02</small>
+            <h3>Deterministic tests</h3>
+            <p>룰 검증은 화면 렌더링보다 먼저 실행됩니다. seeded RNG와 headless model tests를 기본 전제로 둡니다.</p>
+          </div>
+        </article>
+        <article class="evidence-card">
+          <img src="portfolio-assets/class-blade.png" alt="Class route screenshot" />
+          <div class="evidence-body">
+            <small>03</small>
+            <h3>UI runtime spine</h3>
+            <p>창, 버튼, modal dispatch, measured text 같은 UI 동작을 behavior harness로 먼저 고정하는 단계입니다.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="validation">
+      <div class="section-title">
+        <h2>검증 근거</h2>
+        <p>공개 문구는 repo-local evidence ledger와 validation record를 기준으로 제한합니다.</p>
+      </div>
+      <div class="table-panel">
+        <table>
+          <thead>
+            <tr>
+              <th>Area</th>
+              <th>Evidence</th>
+              <th>Public claim boundary</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Game rules</strong></td>
+              <td>Model tests, level validation, combat simulation harness records.</td>
+              <td>Prototype rule validation. Not a shipped or balanced game claim.</td>
+            </tr>
+            <tr>
+              <td><strong>UI modernization</strong></td>
+              <td>Source-backed UI/Text absorption docs and R2 UI runtime spine harness.</td>
+              <td>First runtime-spine proof. Not polished UI or user acceptance.</td>
+            </tr>
+            <tr>
+              <td><strong>AI-assisted pipeline</strong></td>
+              <td>AGENTS, directives, status, handoff, progress, evidence ledger.</td>
+              <td>Auditable collaboration workflow. Not autonomous replacement.</td>
+            </tr>
+            <tr>
+              <td><strong>Public page</strong></td>
+              <td>Static HTML, local render smoke, GitHub Pages deployment check.</td>
+              <td>Portfolio-facing candidate. Public gameplay build is not released.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section" id="pipeline">
+      <div class="section-title">
+        <h2>AI 협업 구조</h2>
+        <p>빠른 생성보다 중요한 기준은 과장 방지와 다음 세션 복구 가능성입니다.</p>
+      </div>
+      <div class="summary-grid">
+        <article class="panel">
+          <h2>Evidence-first workflow</h2>
+          <p>
+            작업 단위는 지시서, 진행 기록, handoff, status JSON, validation result로 남깁니다.
+            기능이 추가되면 먼저 어떤 증거로 주장할 수 있는지 구분하고, user acceptance가 필요한 항목은 별도로 둡니다.
+          </p>
+          <p>
+            이 방식은 포트폴리오에서도 그대로 쓰입니다. 공개 페이지는 게임 상세, 기술 페이지는 구현/검증 사례로 나누고,
+            두 페이지 모두 현재 증거로 말할 수 없는 항목을 주장하지 않습니다.
+          </p>
+        </article>
+        <article class="panel">
+          <h2>What remains</h2>
+          <p>
+            다음 강한 외부 증거는 30-60초 desktop run 영상과 더 직접적인 UI interaction proof입니다.
+            특히 interactive bag, quickslot, viewport behavior가 개선되어야 기술 설명이 실제 사용감으로 이어집니다.
+          </p>
+          <div class="callout">
+            기술 소개는 지금까지의 구현과 방향성을 보여주는 별도 표면입니다. 최종 서사와 가이드 문구는
+            별도 content gate에서 확정합니다.
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">
+        <h2>아직 주장하지 않는 것</h2>
+        <p>현재 페이지의 신뢰도를 지키기 위해 명시적으로 제외한 주장입니다.</p>
+      </div>
+      <ul class="risk-list">
+        <li><b>Shipped game</b>공개 플레이 빌드나 스토어 출시가 완료된 상태가 아닙니다.</li>
+        <li><b>Polished UI</b>현재 UI는 user accepted quality로 잠그지 않았습니다.</li>
+        <li><b>Closed ownership</b>GPLv3 reference-source route와 관련된 권리 경계를 과장하지 않습니다.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    Bone Trail technical page. In-development Java/libGDX roguelike prototype; public gameplay build is not released yet.
+  </footer>
+</body>
+</html>
